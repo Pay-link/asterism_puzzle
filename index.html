@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asterism — Word Search</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<style>
+  :root {
+    --cream: #F5F0E8;
+    --cream-dark: #EDE8DC;
+    --charcoal: #1E1E1E;
+    --charcoal-mid: #2E2E2E;
+    --charcoal-light: #444444;
+    --orange: #C85A1A;
+    --orange-light: #E06820;
+    --orange-dim: #C85A1A22;
+    --orange-hover: #F5EDE8;
+    --border: #D4CFC4;
+    --muted: #7A7570;
+    --found-bg: #E8F5EE;
+    --found-text: #1A6640;
+    --select-bg: #FDF0E8;
+    --select-text: #C85A1A;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--cream);
+    color: var(--charcoal);
+    font-family: 'Karla', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* header */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: relative;
+    z-index: 1;
+    background: var(--cream);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--charcoal);
+    text-decoration: none;
+  }
+
+  .logo-mark {
+    width: 32px;
+    height: 32px;
+    background: var(--charcoal);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .logo-mark iconify-icon {
+    color: var(--cream);
+    font-size: 18px;
+  }
+
+  .header-tag {
+    font-family: 'Karla', sans-serif;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* hero section */
+  .hero {
+    padding: 2.5rem 2rem 1.5rem;
+    position: relative;
+    z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .eyebrow {
+    font-family: 'Karla', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 1px;
+    background: var(--orange);
+  }
+
+  h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    color: var(--charcoal);
+    margin-bottom: 12px;
+  }
+
+  h1 span {
+    color: var(--orange);
+  }
+
+  .subtitle {
+    font-family: 'Karla', sans-serif;
+    font-size: 13px;
+    color: var(--muted);
+    max-width: 480px;
+    line-height: 1.6;
+  }
+
+  .subtitle a {
+    color: var(--orange);
+    text-decoration: none;
+    border-bottom: 1px solid var(--orange-dim);
+    transition: border-color 0.2s;
+  }
+
+  .subtitle a:hover { border-color: var(--orange); }
+
+  /* main layout */
+  main {
+    flex: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 0 2rem 4rem;
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: auto 240px;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  /* grid panel */
+  .grid-panel {
+    background: var(--cream-dark);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    overflow-x: auto;
+    width: fit-content;
+  }
+
+  .grid-label {
+    font-family: 'Karla', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .grid-label iconify-icon { font-size: 14px; }
+
+  #grid-table {
+    border-collapse: collapse;
+    user-select: none;
+    margin: 0 auto;
+  }
+
+  #grid-table td {
+    width: 24px;
+    height: 24px;
+    text-align: center;
+    vertical-align: middle;
+    font-family: 'Karla', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--charcoal-light);
+    cursor: pointer;
+    text-transform: uppercase;
+    border-radius: 2px;
+    transition: background 0.1s;
+    position: relative;
+  }
+
+  #grid-table td:hover { background: var(--orange-dim); color: var(--orange); }
+  #grid-table td.selecting { background: var(--select-bg); color: var(--select-text); font-weight: 700; }
+  #grid-table td.found { background: var(--found-bg); color: var(--found-text); font-weight: 700; }
+
+  /* sidebar */
+  .sidebar { position: sticky; top: 2rem; }
+
+  .sidebar-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .sidebar-card h3 {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .sidebar-card h3 iconify-icon { font-size: 14px; }
+
+  .word-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .word-item {
+    font-family: 'Karla', sans-serif;
+    font-size: 12px;
+    color: var(--charcoal);
+    padding: 5px 8px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s;
+    letter-spacing: 0.02em;
+  }
+
+  .word-item .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+
+  .word-item.found {
+    text-decoration: line-through;
+    color: var(--muted);
+  }
+
+  .word-item.found .dot { background: var(--found-text); }
+
+  /* progress */
+  .progress-card {
+    background: var(--charcoal);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    color: var(--cream);
+    margin-bottom: 1rem;
+  }
+
+  .progress-label {
+    font-family: 'Karla', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .progress-nums {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+
+  .progress-found {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--orange-light);
+    line-height: 1;
+  }
+
+  .progress-total {
+    font-family: 'Karla', sans-serif;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .progress-bar-wrap {
+    background: var(--charcoal-mid);
+    border-radius: 99px;
+    height: 4px;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: var(--orange);
+    border-radius: 99px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  #win-msg {
+    font-family: 'Karla', sans-serif;
+    font-size: 11px;
+    color: var(--orange-light);
+    margin-top: 8px;
+    min-height: 16px;
+    letter-spacing: 0.04em;
+  }
+
+  /* actions */
+  .actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 0;
+    border-radius: 8px;
+    font-family: 'Karla', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid var(--border);
+    background: white;
+    color: var(--charcoal);
+  }
+
+  .btn:hover { background: var(--cream-dark); }
+
+  .btn-primary {
+    background: var(--orange);
+    color: white;
+    border-color: var(--orange);
+  }
+
+  .btn-primary:hover { background: var(--orange-light); border-color: var(--orange-light); }
+
+  /* instructions */
+  .instructions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 0;
+  }
+
+  .instruction-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'Karla', sans-serif;
+  }
+
+  .instruction-row iconify-icon { font-size: 14px; color: var(--orange); flex-shrink: 0; }
+
+  /* footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 1.25rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    z-index: 1;
+    background: var(--cream);
+  }
+
+  .footer-left {
+    font-family: 'Karla', sans-serif;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .footer-left a { color: var(--orange); text-decoration: none; }
+
+  .footer-right {
+    font-family: 'Karla', sans-serif;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* responsive */
+  @media (max-width: 760px) {
+    main {
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+      padding: 0 1rem 3rem;
+    }
+    .sidebar { position: static; }
+    .grid-panel { width: 100%; overflow-x: auto; }
+    #grid-table { width: 100%; }
+    #grid-table td {
+      width: calc((100vw - 4rem) / 20);
+      height: calc((100vw - 4rem) / 20);
+      font-size: 10px;
+      min-width: 14px;
+      min-height: 14px;
+    }
+    header { padding: 0 1rem; }
+    .header-tag { display: none; }
+    .hero { padding: 1.5rem 1rem 1rem; }
+    h1 { font-size: 1.75rem; }
+    footer { padding: 1rem; flex-direction: column; gap: 4px; text-align: center; }
+    .word-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+    }
+    .progress-card { margin-bottom: 0.75rem; }
+    .sidebar-card { padding: 1rem; margin-bottom: 0.75rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="#">
+    <div class="logo-mark">
+      <iconify-icon icon="ph:asterisk-bold"></iconify-icon>
+    </div>
+    Asterism
+  </a>
+  <span class="header-tag">Pattern Recovery — Word Search</span>
+</header>
+
+<div class="hero">
+  <p class="eyebrow">Interactive puzzle</p>
+  <h1>Find the <span>hidden</span><br>patterns.</h1>
+  <p class="subtitle">
+    23 words hidden across, down, and diagonally. Built by
+    <a href="https://x.com/Crypto_Alpha12" target="_blank">@Crypto_Alpha12</a>
+    for <strong>Asterism</strong> — drag to select a word.
+  </p>
+</div>
+
+<main>
+  <div>
+    <div class="grid-panel">
+      <div class="grid-label">
+        <iconify-icon icon="ph:grid-four"></iconify-icon>
+        20 × 20 grid
+      </div>
+      <table id="grid-table"></table>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="progress-card">
+      <div class="progress-label">Progress</div>
+      <div class="progress-nums">
+        <span class="progress-found" id="found-count">0</span>
+        <span class="progress-total">/ <span id="total-count">0</span> words</span>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+      <div id="win-msg"></div>
+    </div>
+
+    <div class="sidebar-card">
+      <h3><iconify-icon icon="ph:list-bullets"></iconify-icon> Word list</h3>
+      <div class="word-list" id="word-list"></div>
+    </div>
+
+    <div class="sidebar-card">
+      <h3><iconify-icon icon="ph:info"></iconify-icon> How to play</h3>
+      <div class="instructions">
+        <div class="instruction-row"><iconify-icon icon="ph:cursor-click"></iconify-icon>Click and drag across letters</div>
+        <div class="instruction-row"><iconify-icon icon="ph:arrows-out-cardinal"></iconify-icon>Words go any direction</div>
+        <div class="instruction-row"><iconify-icon icon="ph:check-circle"></iconify-icon>Found words highlight green</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" onclick="revealAll()">
+        <iconify-icon icon="ph:eye"></iconify-icon> Reveal
+      </button>
+      <button class="btn btn-primary" onclick="resetAll()">
+        <iconify-icon icon="ph:arrows-clockwise"></iconify-icon> Reset
+      </button>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span class="footer-left">
+    Built by <a href="https://x.com/Crypto_Alpha12" target="_blank">@Crypto_Alpha12</a> for Asterism
+  </span>
+  <span class="footer-right">Pattern Recovery — Word Search</span>
+</footer>
+
+<script>
+const WORDS = ['PATTERN','RETRIEVAL','HOPFIELD','MEMORY','ASCII','GRID','NOISE','CORRUPT','RECALL','PHOSPHOR','RESTORE','FIDELITY','ASSOCIATIVE','FRAGMENT','ECHO','DRIFT','INVERT','MUTATE','RECOVER','BINARY','PIXEL','GLOW','TERMINAL'];
+const SIZE = 20;
+const DIRS = [[0,1],[1,0],[1,1],[1,-1],[0,-1],[-1,0],[-1,-1],[-1,1]];
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+let grid, placed, foundWords, selecting, startCell, currentCells;
+
+function init() {
+  grid = Array.from({length:SIZE},()=>Array(SIZE).fill(''));
+  placed = [];
+  foundWords = new Set();
+  selecting = false;
+  startCell = null;
+  currentCells = [];
+}
+
+function canPlace(word,r,c,dr,dc){
+  for(let i=0;i<word.length;i++){
+    let nr=r+dr*i,nc=c+dc*i;
+    if(nr<0||nr>=SIZE||nc<0||nc>=SIZE)return false;
+    if(grid[nr][nc]!==''&&grid[nr][nc]!==word[i])return false;
+  }
+  return true;
+}
+
+function placeWord(word){
+  let attempts=0;
+  while(attempts<600){
+    attempts++;
+    const [dr,dc]=DIRS[Math.floor(Math.random()*DIRS.length)];
+    const r=Math.floor(Math.random()*SIZE);
+    const c=Math.floor(Math.random()*SIZE);
+    if(canPlace(word,r,c,dr,dc)){
+      const cells=[];
+      for(let i=0;i<word.length;i++){
+        grid[r+dr*i][c+dc*i]=word[i];
+        cells.push([r+dr*i,c+dc*i]);
+      }
+      placed.push({word,cells});
+      return true;
+    }
+  }
+  return false;
+}
+
+function buildGrid(){
+  [...WORDS].sort((a,b)=>b.length-a.length).forEach(w=>placeWord(w));
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)
+    if(grid[r][c]==='')grid[r][c]=LETTERS[Math.floor(Math.random()*26)];
+}
+
+function renderGrid(){
+  const table=document.getElementById('grid-table');
+  table.innerHTML='';
+  for(let r=0;r<SIZE;r++){
+    const tr=document.createElement('tr');
+    for(let c=0;c<SIZE;c++){
+      const td=document.createElement('td');
+      td.textContent=grid[r][c];
+      td.dataset.r=r; td.dataset.c=c;
+      td.addEventListener('mousedown',e=>{e.preventDefault();startSelect(r,c);});
+      td.addEventListener('mouseover',()=>{if(selecting)updateSelect(r,c);});
+      td.addEventListener('mouseup',()=>endSelect());
+      td.addEventListener('touchstart',e=>{e.preventDefault();startSelect(r,c);},{passive:false});
+      td.addEventListener('touchmove',e=>{
+        e.preventDefault();
+        const t=e.touches[0];
+        const el=document.elementFromPoint(t.clientX,t.clientY);
+        if(el&&el.dataset.r!==undefined)updateSelect(+el.dataset.r,+el.dataset.c);
+      },{passive:false});
+      td.addEventListener('touchend',()=>endSelect());
+      tr.appendChild(td);
+    }
+    table.appendChild(tr);
+  }
+  restoreFound();
+}
+
+function renderWordList(){
+  const el=document.getElementById('word-list');
+  el.innerHTML='';
+  WORDS.forEach(w=>{
+    const d=document.createElement('div');
+    d.className='word-item'+(foundWords.has(w)?' found':'');
+    d.id='word-'+w;
+    d.innerHTML=`<span class="dot"></span>${w}`;
+    el.appendChild(d);
+  });
+  document.getElementById('total-count').textContent=placed.length;
+  updateProgress();
+}
+
+function updateProgress(){
+  const n=foundWords.size, t=placed.length;
+  document.getElementById('found-count').textContent=n;
+  document.getElementById('progress-bar').style.width=(t?Math.round(n/t*100):0)+'%';
+}
+
+function getCellsInLine(r1,c1,r2,c2){
+  const dr=Math.sign(r2-r1),dc=Math.sign(c2-c1);
+  if(dr===0&&dc===0)return[[r1,c1]];
+  const cells=[];
+  let r=r1,c=c1;
+  while(true){
+    cells.push([r,c]);
+    if(r===r2&&c===c2)break;
+    r+=dr; c+=dc;
+    if(cells.length>SIZE*2)break;
+  }
+  return cells;
+}
+
+function startSelect(r,c){
+  selecting=true; startCell={r,c}; currentCells=[[r,c]];
+  highlightSelecting(currentCells);
+}
+
+function updateSelect(r,c){
+  if(!startCell)return;
+  currentCells=getCellsInLine(startCell.r,startCell.c,r,c);
+  highlightSelecting(currentCells);
+}
+
+function endSelect(){
+  if(!selecting)return;
+  selecting=false;
+  checkMatch(currentCells);
+  clearSelecting();
+  currentCells=[]; startCell=null;
+}
+
+function highlightSelecting(cells){
+  document.querySelectorAll('#grid-table td.selecting').forEach(td=>td.classList.remove('selecting'));
+  cells.forEach(([r,c])=>{
+    const td=document.querySelector(`#grid-table td[data-r="${r}"][data-c="${c}"]`);
+    if(td&&!td.classList.contains('found'))td.classList.add('selecting');
+  });
+}
+
+function clearSelecting(){
+  document.querySelectorAll('#grid-table td.selecting').forEach(td=>td.classList.remove('selecting'));
+}
+
+function checkMatch(cells){
+  for(const p of placed){
+    if(foundWords.has(p.word))continue;
+    const cellsMatch=(a,b)=>a.length===b.length&&a.every(([r,c],i)=>b[i][0]===r&&b[i][1]===c);
+    if(cellsMatch(cells,p.cells)||cellsMatch([...cells].reverse(),p.cells)){
+      foundWords.add(p.word);
+      p.cells.forEach(([r,c])=>{
+        const td=document.querySelector(`#grid-table td[data-r="${r}"][data-c="${c}"]`);
+        if(td)td.classList.add('found');
+      });
+      const wi=document.getElementById('word-'+p.word);
+      if(wi)wi.classList.add('found');
+      updateProgress();
+      if(foundWords.size===placed.length)
+        document.getElementById('win-msg').textContent='— all patterns recovered.';
+      return;
+    }
+  }
+}
+
+function restoreFound(){
+  foundWords.forEach(word=>{
+    const p=placed.find(x=>x.word===word);
+    if(p)p.cells.forEach(([r,c])=>{
+      const td=document.querySelector(`#grid-table td[data-r="${r}"][data-c="${c}"]`);
+      if(td)td.classList.add('found');
+    });
+  });
+}
+
+function revealAll(){
+  placed.forEach(p=>{
+    foundWords.add(p.word);
+    p.cells.forEach(([r,c])=>{
+      const td=document.querySelector(`#grid-table td[data-r="${r}"][data-c="${c}"]`);
+      if(td)td.classList.add('found');
+    });
+    const wi=document.getElementById('word-'+p.word);
+    if(wi)wi.classList.add('found');
+  });
+  updateProgress();
+  document.getElementById('win-msg').textContent='— all patterns revealed.';
+}
+
+function resetAll(){
+  init();
+  buildGrid();
+  renderGrid();
+  renderWordList();
+  document.getElementById('win-msg').textContent='';
+}
+
+init();
+buildGrid();
+renderGrid();
+renderWordList();
+document.addEventListener('mouseup',()=>{if(selecting)endSelect();});
+</script>
+</body>
+</html>
